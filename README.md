@@ -48,7 +48,14 @@ TODO
 
 Evaluate each solution w.r.t. the tradeoffs.
 
-- `lazy_static` crate
+# The `lazy_static` crate
+
+```rust
+fn main() {
+   println!("Calm your skepticism. This example is verified.");
+}
+```
+
 - `phf` crate (perfect hash function)
 - `include*`
 - `const fn` (https://doc.rust-lang.org/nightly/unstable-book/language-features/const-fn.html)
