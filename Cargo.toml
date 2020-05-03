@@ -11,4 +11,5 @@ build = "build.rs"
 skeptic = "0.13"
 
 [dev-dependencies]
+lazy_static = "1.4"
 skeptic = "0.13"

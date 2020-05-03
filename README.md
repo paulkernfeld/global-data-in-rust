@@ -2,6 +2,13 @@ This is a project to explain how you can use "global data" in Rust.
 
 When I say "global data," I mean data that is loaded near or before the start of the program and is available in most parts of the program.
 
+Possible use cases for global data:
+
+- App "configuration," e.g. weapon characteristics for a game 
+- You want something to be available everywhere without needing to pass it through functions (janky??)
+- Generating code from external data
+- Database connections... or other network resources?
+
 # Tradeoffs
 
 Here are some questions to think about w.r.t. global data:
@@ -21,6 +28,8 @@ Advantages of runtime:
 Immutable global data can be safely shared between threads with minimal synchronization. Simple and fast.
 
 Mutable global data can be useful but also dangerous. Out of scope for now. If you're in this situation, consider refactoring.
+
+Consider hot-reloading, which is kind of a unidirectional immutability where the program can't change the data but external entities can.
 
 ## Lifetime of data
 
@@ -48,7 +57,52 @@ TODO
 
 Evaluate each solution w.r.t. the tradeoffs.
 
-# The `lazy_static` crate
+## The `lazy_static` crate
+
+This crate uses a macro to automate exactly-once initialization of a static variable using [`std::sync::Once`](https://doc.rust-lang.org/std/sync/struct.Once.html).
+
+Advantages:
+
+- `'static` lifetime
+- Allows mutable data
+- Creating data at runtime
+- Creating a data structure that requires heap allocation
+- Transforming the data on creation with a runtime function (not a const fn)
+- Can work w/o `std` using `spin_no_std`
+
+Disadvantages:
+
+- Any type in them needs to fulfill the Sync trait. So, if you want have mutable data, you probably need to use like a `Mutex` or `RwLock`. Beware deadlocks and confusing code?
+- If the type has a destructor, then it will not run when the process exits. So you probably wouldn't want to do this with anything that has complicated resources that need to be cleaned up. Maybe temporary files, lock files or PID files?
+
+The following example is stolen from the [`lazy_static` docs](https://docs.rs/lazy_static/1.4.0/lazy_static/). It shows:
+
+```rust
+#[macro_use]
+extern crate lazy_static;
+
+use std::collections::HashMap;
+
+lazy_static! {
+    static ref HASHMAP: HashMap<u32, &'static str> = {
+        let mut m = HashMap::new();
+        m.insert(0, "foo");
+        m.insert(1, "bar");
+        m.insert(2, "baz");
+        m
+    };
+    static ref COUNT: usize = HASHMAP.len();
+    static ref NUMBER: u32 = times_two(21);
+}
+
+fn times_two(n: u32) -> u32 { n * 2 }
+
+fn main() {
+    println!("The map has {} entries.", *COUNT);
+    println!("The entry for `0` is \"{}\".", HASHMAP.get(&0).unwrap());
+    println!("A expensive calculation on a static results in: {}.", *NUMBER);
+}
+```
 
 ```rust
 fn main() {
