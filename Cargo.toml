@@ -7,9 +7,14 @@ build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[dependencies]
+phf = "0.8"
+
 [build-dependencies]
+phf_codegen = "0.8"
 skeptic = "0.13"
 
 [dev-dependencies]
 lazy_static = "1.4"
 skeptic = "0.13"
+phf = { version = "0.8", features = ["macros"] }

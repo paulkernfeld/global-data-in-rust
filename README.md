@@ -104,13 +104,52 @@ fn main() {
 }
 ```
 
+## `phf` crate
+
+The [phf](https://github.com/sfackler/rust-phf) crate lets you create maps that are available at compile time.
+
+Advantages:
+
+- Compile-time of data validity
+- `'static` lifetime
+- I think that no heap allocation is required (data lives in binary)
+
+Disadvantages:
+
+- Maybe doesn't allow mutable data (?)
+- Kind of complex to get working
+
+There are two ways to use `phf`. The first way is without a build component:
+
 ```rust
+use phf::phf_map;
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum Keyword {
+    Loop,
+    Continue,
+    Break,
+    Fn,
+    Extern,
+}
+
+static KEYWORDS: phf::Map<&'static str, Keyword> = phf_map! {
+    "loop" => Keyword::Loop,
+    "continue" => Keyword::Continue,
+    "break" => Keyword::Break,
+    "fn" => Keyword::Fn,
+    "extern" => Keyword::Extern,
+};
+
 fn main() {
-   println!("Calm your skepticism. This example is verified.");
+    assert_eq!(KEYWORDS.get("loop"), Some(&crate::Keyword::Loop))
 }
 ```
 
-- `phf` crate (perfect hash function)
+The second way is with a build component, where we build the map using a custom build script, which would let you generate the map from, e.g., an ingested data file. See `src/main.rs` for an example of this.
+
+# TODO:
+
 - `include*`
 - `const fn` (https://doc.rust-lang.org/nightly/unstable-book/language-features/const-fn.html)
 - `maplit`?
