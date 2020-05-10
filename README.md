@@ -168,6 +168,50 @@ fn main() {
 }
 ```
 
+## Mutable static items
+
+A static item is similar to a constant, except that it allows mutability as well as better use with raw pointers. Mutating a static is always `unsafe` because Rust's type system isn't there to enforce unique access. Static items do not call `drop` at the end of the program, so it won't clean up resources that it allocates. 
+
+```rust
+static mut FLAG: bool = false;
+
+fn main() {
+    unsafe { FLAG = true };
+    assert!(unsafe { FLAG });
+}
+```
+
+An example of a structure that requires heap allocation. I'm using a `Cell` and an `Option` so that I can create a spot in memory for the data at compile time, then I fill in the data at run time.
+
+```rust
+use std::collections::HashMap;
+use std::cell::Cell;
+static mut MY_STATIC_MAP: Cell<Option<HashMap::<i8, i8>>> = Cell::new(None);
+
+fn main() {
+    // Modify the contents of the cell
+    unsafe { MY_STATIC_MAP.set(Some(HashMap::new())) };
+
+    // Manipulate a mutable reference to the contents of the cell
+    unsafe { MY_STATIC_MAP.get_mut().as_mut().unwrap().insert(-3, 7) };
+
+    // Get an immutable reference to the contents of the cell
+    assert_eq!(Some(&7), unsafe { MY_STATIC_MAP.get_mut().as_ref().unwrap().get(&-3) });
+}
+```
+
+Advantages:
+
+- Allows efficient unsafe data management (e.g. `lazy_static`)
+- Works well with raw pointers + FFI
+
+Disadvantages:
+
+- Access to mutable statics is unsafe because the compiler isn't checking that there's unique.
+- All data must be `Sync`
+
+TODO: show an example of raw pointers or FFI with static.
+
 # TODO:
 
 - `include*`
