@@ -78,6 +78,30 @@ Disadvantages:
 - Doesn't allow mutable data
 - Doesn't allow heap-allocated data
 
+## `include_str` and `include_bytes`
+
+`include_str` and `include_bytes` include a file as `&'static str` and `&'static [u8]`, respectively.
+
+```rust
+use global_data_in_rust;
+
+fn main() {
+    assert_eq!("Hello, World!", global_data_in_rust::SAMPLE_STR);
+    assert_eq!(b"Hello, World!", global_data_in_rust::SAMPLE_BYTES);
+}
+```
+
+Advantages:
+
+- Lifetime of data is `'static`
+- Checks for the presence of the file at compile time
+
+
+Disadvantages:
+
+- No mutability
+- No heap-allocated data
+
 ## The `lazy_static` crate
 
 This crate uses a macro to automate exactly-once initialization of a static variable using [`std::sync::Once`](https://doc.rust-lang.org/std/sync/struct.Once.html).
