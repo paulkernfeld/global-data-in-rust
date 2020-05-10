@@ -3,7 +3,7 @@ This is a project to explain how you can use "global data" in Rust. When I say "
 Possible use cases for global data:
 
 - App "configuration," e.g. weapon characteristics for a game 
-- You want something to be available everywhere without needing to pass it through functions (janky??)
+- You want something to be available everywhere without needing to pass it as an argument through all of your functions (janky??)
 - Generating code from external data
 - Database connections... or other network resources?
 - A logger, maybe
@@ -55,6 +55,28 @@ TODO
 # Potential Solutions
 
 Evaluate each solution w.r.t. the tradeoffs. I will try to order the solutions in order of the [Principle of Least Power](https://www.lihaoyi.com/post/StrategicScalaStylePrincipleofLeastPower.html), although it won't be a strict ordering because there are qualitative differences.
+
+## The `const` keyword
+
+The [`const` keyword](https://doc.rust-lang.org/std/keyword.const.html) ([TRPL](https://doc.rust-lang.org/stable/book/ch03-01-variables-and-mutability.html#differences-between-variables-and-constants)) is Rust's built-in way of generating immutable constant data. An extremely simple approach. 
+
+```rust
+const MY_NAME: &str = "paul";
+
+fn main() {
+    assert_eq!(MY_NAME, "paul");
+}
+```
+
+Advantages:
+
+- `static` lifetime
+- Data type is validated at compile time
+
+Disadvantages:
+
+- Doesn't allow mutable data
+- Doesn't allow heap-allocated data
 
 ## The `lazy_static` crate
 
