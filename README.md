@@ -83,8 +83,6 @@ Disadvantages:
 `include_str` and `include_bytes` include a file as `&'static str` and `&'static [u8]`, respectively.
 
 ```rust
-use global_data_in_rust;
-
 fn main() {
     assert_eq!("Hello, World!", global_data_in_rust::SAMPLE_STR);
     assert_eq!(b"Hello, World!", global_data_in_rust::SAMPLE_BYTES);
@@ -95,7 +93,6 @@ Advantages:
 
 - Lifetime of data is `'static`
 - Checks for the presence of the file at compile time
-
 
 Disadvantages:
 
@@ -191,6 +188,27 @@ fn main() {
     assert_eq!(KEYWORDS.get("loop"), Some(&crate::Keyword::Loop))
 }
 ```
+
+## `include`
+
+`include` is kind of like copy-pasting a snippet of Rust into your code. It can be used to generate complex Rust code at compile time (as in `phf`).
+
+```rust
+fn main() {
+    assert_eq!(6, global_data_in_rust::ALSO_SIX);
+}
+```
+
+Advantages:
+
+- More powerful code generation than with a macro
+- Errors will be detected at compile time
+- Create mutable or immutable data
+- Can work with `'static` lifetime
+
+Disadvantages
+
+- Unhygienic (in the macro sense)
 
 ## Mutable static items
 
