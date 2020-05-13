@@ -36,7 +36,7 @@ Data with the `'static` lifetime can make things easier because you can use it l
 
 Not all global data will need the `'static` lifetime. Maybe you only need your data available in _most_ of your program, not all of it. This can open up more options for loading your data.
 
-## Is heap allocation required?
+## Is heap allocation supported?
 
 Heap allocation is convenient because you don't need to know the size of your data at compile time. However, it means that you can't use this method without an allocator. Avoiding heap allocations is most important in embedded programming, real-time systems, and really high-performance applications.
 
@@ -58,7 +58,8 @@ fn my_fn(config: Config) {
 }
 
 fn main() {
-    let config = Config { my_name: "paul" };
+    // This does heap allocation
+    let config = Config { my_name: String::from("paul") };
     my_fn(config);
 }
 ```
@@ -69,6 +70,7 @@ Advantages:
 - You often don't need to specify the type of the data. This can be useful for functions and complex types.
 - It's easier to provide dummy data for testing
 - Allows mutable data
+- Allows heap-allocated data
 
 Disadvantages:
 
@@ -121,7 +123,7 @@ Advantages:
 
 - `'static` lifetime
 - Creating data at run-time
-- You can create data structures that requires heap allocation
+- Allows heap-allocated data
 - You can transform the data on creation with a run-time function (not a const fn)
 - Allows interior-mutable data
 - Can work w/o `std` using `spin_no_std`
@@ -173,6 +175,7 @@ Advantages:
 Disadvantages:
 
 - Kind of complex to get working
+- Only supports maps
 
 There are two ways to use `phf`. Probably the most normal way is with a custom build script, which would let you generate the map from, e.g., an ingested data file. See `src/main.rs` for an example of this (I couldn't get it to work with `skeptic`).
  The other, simpler way is to create the map inline with a macro:
@@ -261,18 +264,22 @@ Although it doesn't use mutable statics, Armin Ronacher's [You can't Rust that](
 Advantages:
 
 - Built into Rust
-- Allows efficient unsafe mutable data management (see `lazy_static`)
+- Allows efficient unsafe mutable data management (e.g. `lazy_static`)
 - Works well with raw pointers + FFI. This is likely better than `const` because "References to the same constant are not necessarily guaranteed to refer to the same memory address..." ([TRPL 1st ed.](https://doc.rust-lang.org/1.29.2/book/first-edition/const-and-static.html))
 
 Disadvantages:
 
-- Access to mutable statics is unsafe because the compiler isn't checking that there's unique.
+- All access to mutable statics is unsafe. Be careful not to violate any invariants!
 - All data must be `Sync`
 - Destructors won't run
 
+## Domain-specific solutions
+
+- The Embedded Rust Book [suggests using a singleton pattern](https://rust-embedded.github.io/book/peripherals/singletons.html) instead of a `static mut` to "treat your hardware like data" without requiring as much `unsafe`.
+- The Amethyst game engine has a [`Loader`](https://docs-src.amethyst.rs/stable/amethyst_assets/struct.Loader.html) struct that can be used to load data.
+
 # TODO:
 
-- Domain-specific solutions
 - Show an example of raw pointers or FFI with static
 - Is it possible to use interior mutability with `const`?
 - What's a real-life use case of an immutable static item?
