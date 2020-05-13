@@ -1,64 +1,52 @@
-This is a project to explain how you can use "global data" in Rust. When I say "global data," I mean data that is loaded near the start of the program and is accessible in almost all of the program.
+This is a guide to explain how you can use "global data" in Rust. When I say "global data," I mean data that is loaded near the start of the program and is accessible in almost all of the program.
 
 Possible use cases for global data:
 
-- App "configuration," e.g. weapon characteristics for a game 
-- You want something to be available everywhere without needing to pass it as an argument through all of your functions (janky??)
-- Generating code from external data
+- App configuration, e.g. weapon characteristics for a game 
+- Making data available everywhere without needing to pass it as an argument through all functions (apply this carefully!)
+- Generating Rust code from external data
 - Database connections... or other network resources?
 - A logger, maybe
 
 # Tradeoffs
 
-Here are some questions to think about w.r.t. global data:
+Here are some questions to think about when you're choosing a global data solution for your program:
 
-## Compile-time or run-time?
+## Compile time or run time?
 
-If you load the data at compile-time, that gives you the opportunity to detect invalid data sooner, so you can feel more confident about your program's correctness. Also, it might improve your program's start time if you're loading a small amount of data.
+Loading the data at compile time provides the opportunity to detect invalid data sooner. Also, it might improve the program's startup time.
 
-If you load the data at run-time, changing the data won't trigger a recompile. In large Rust projects with lots of dependencies, compile time can be a pain point. Another advantage of this is that you can load the data in lazily, which could help your program's start time if there is lots of data but don't always need all of it immediately.
+Loading the data at run time can be nice because changing the data won't trigger a recompile. In large Rust projects with lots of dependencies, long compilation times can be a pain point. Another advantage of loading at run-time is that the data can be loaded lazily, which could improve the program's startup time if there is lots of data but not all of it is needed immediately.
 
-TODO: is there a hybrid approach where the data is _validated_ at run-time but _loaded_ at run-time? That would combine the eager validation of compile-time with the not-needing-to-recompile of run-time.
+It's also possible to implement a hybrid approach where the data is _validated_ at compile time but _loaded_ at run time. That combines the eager validation of compile-time loading with the not-needing-to-recompile of run-time loading.
 
 ## Mutable vs. immutable
 
-Immutable global data can be safely shared between threads with minimal synchronization. Simple, fast, and easy to understand.
+When I say "immutable" and "mutable," I mean it in a general and hand-wavy sense that is not the equivalent of a Rust type system concept. For an example of this, `lazy_static` uses mutability under the hood but I'm categorizing it as "immutable" because it presents an immutable interface to the user.
 
-Mutable global data can be really useful but sometimes can make a program hard to reason about. If you're in this situation, first consider whether there's a way to refactor your code to reduce the scope of the mutable data.
+Immutable global data can be safely shared between threads with minimal synchronization. It's simple, fast, and easy to understand.
 
-Consider hot-reloading, which is kind of a unidirectional immutability where the program can't change the data but external entities can.
+Mutable global data can be a really powerful tool but sometimes can make a program hard to reason about. Before choosing mutable global data, first consider whether there's a way to refactor your code to reduce the scope of the mutable data.
 
-When I say "immutable" and "mutable," I mean it in a general and hand-wavy sense that is not the equivalent of a Rust type system concept. For an example of this, `lazy_static` uses mutability internally but I'm categorizing it as "immutable" because it presents an immutable interface to the user.
+Hot-reloading is an interesting kind of unidirectional immutability where the program can't change the data but external entities can.
 
 ## Lifetime of data
 
-Data with `'static` can make things easier because you can use it literally anywhere in your program. Statics are "are baked into the data segment of the final binary" ([TRPL 1 ed.](https://doc.rust-lang.org/1.29.2/book/first-edition/lifetimes.html)).
+Data with the `'static` lifetime can make things easier because you can use it literally anywhere in your program. Statics are "are baked into the data segment of the final binary" ([TRPL 1st ed.](https://doc.rust-lang.org/1.29.2/book/first-edition/lifetimes.html)).
 
-You don't always need `'static`. Maybe you only need your data available in _most_ of your program, not all. This can open up more options for loading your data. TODO: relationship with `Sync`?
-
-## `const` vs. `static` vs. `let`
-
-`const` and `static` are the "most global" because you can access them from _literally_(?) anywhere in your program. Data declared as `const` and `static`.
-
-`static` gives you the ability to mutate the variable, and a single unique address in memory. If you're working with FFI or pointers, this may be better than `const` because "References to the same constant are not necessarily guaranteed to refer to the same memory address for this reason." ([TRPL 1st ](https://doc.rust-lang.org/1.29.2/book/first-edition/const-and-static.html))
-
-With `let`, you might not need to annotate the type of your data (as long as the data-loading mechanism knows the type of the data that it is loading). This may be relevant for closures and types that are incredibly complex.
+Not all global data will need the `'static` lifetime. Maybe you only need your data available in _most_ of your program, not all of it. This can open up more options for loading your data.
 
 ## Is heap allocation required?
 
 Heap allocation is convenient because you don't need to know the size of your data at compile time. However, it means that you can't use this method without an allocator. Avoiding heap allocations is most important in embedded programming, real-time systems, and really high-performance applications.
 
-## When the app is deployed, does the data live in the app or in external files?
-
-TODO
-
 # Potential Solutions
 
-Evaluate each solution w.r.t. the tradeoffs. I will try to order the solutions in order of the [Principle of Least Power](https://www.lihaoyi.com/post/StrategicScalaStylePrincipleofLeastPower.html), although it won't be a strict ordering because there are qualitative differences.
+Here I'll explain a bit about how each solution works and how to use them, as well as the advantages and disadvantages of each. I will try to order the solutions in order of increasing power, inspired by the [Principle of Least Power](https://www.lihaoyi.com/post/StrategicScalaStylePrincipleofLeastPower.html), although it won't be a strict ordering because there are qualitative differences.
 
 ## The `const` keyword
 
-The [`const` keyword](https://doc.rust-lang.org/std/keyword.const.html) ([TRPL](https://doc.rust-lang.org/stable/book/ch03-01-variables-and-mutability.html#differences-between-variables-and-constants)) is Rust's built-in way of generating immutable constant data. An extremely simple approach. 
+The [`const` keyword](https://doc.rust-lang.org/std/keyword.const.html) ([TRPL Chapter 3](https://doc.rust-lang.org/stable/book/ch03-01-variables-and-mutability.html#differences-between-variables-and-constants)) is Rust's built-in way to handle immutable constant data. An extremely simple approach.
 
 ```rust
 const MY_NAME: &str = "paul";
@@ -70,6 +58,7 @@ fn main() {
 
 Advantages:
 
+- Built into Rust
 - `static` lifetime
 - Data type is validated at compile time
 
@@ -91,6 +80,7 @@ fn main() {
 
 Advantages:
 
+- Built into Rust
 - Lifetime of data is `'static`
 - Checks for the presence of the file at compile time
 
@@ -101,7 +91,7 @@ Disadvantages:
 
 ## The `lazy_static` crate
 
-This crate uses a macro to automate exactly-once initialization of a static variable using [`std::sync::Once`](https://doc.rust-lang.org/std/sync/struct.Once.html).
+The [`lazy_static`](https://docs.rs/lazy_static) crate uses a macro to automate exactly-once initialization of a static variable using [`std::sync::Once`](https://doc.rust-lang.org/std/sync/struct.Once.html). The [`once_cell`](https://docs.rs/once_cell) crate is also worth checking out; it's like `lazy_static` without macros.
 
 Advantages:
 
@@ -114,7 +104,7 @@ Advantages:
 
 Disadvantages:
 
-- Any type in them needs to fulfill the `Sync` trait. So, if you want have mutable data, you probably need to use like a `Mutex` or `RwLock`. Beware deadlocks and confusing code?
+- The data type needs to fulfill the `Sync` trait. So, if you want have mutable data, you probably need to use like a `Mutex` or `RwLock`. Beware deadlocks and confusing code?
 - If the type has a destructor, then it will not run when the process exits. So you probably wouldn't want to do this with anything that has complicated resources that need to be cleaned up. Maybe temporary files, lock files or PID files?
 
 The following example is stolen from the [`lazy_static` docs](https://docs.rs/lazy_static/1.4.0/lazy_static/). It shows creating a heap-allocating data structure and using a function to transform the data:
@@ -201,6 +191,7 @@ fn main() {
 
 Advantages:
 
+- Built into Rust
 - More powerful code generation than with a macro
 - Errors will be detected at compile time
 - Create mutable or immutable data
@@ -223,7 +214,7 @@ fn main() {
 }
 ```
 
-An example of a structure that requires heap allocation. I'm using a `Cell` and an `Option` so that I can create a spot in memory for the data at compile time, then I fill in the data at run time.
+An example of a structure that requires heap allocation. I'm using a `Cell` and an `Option` so that I can create a spot in memory for the data at compile time, then I fill in the data at run-time.
 
 ```rust
 use std::collections::HashMap;
@@ -242,20 +233,27 @@ fn main() {
 }
 ```
 
+Although it doesn't use mutable statics, Armin Ronacher's [You can't Rust that](https://lucumr.pocoo.org/2018/3/31/you-cant-rust-that/) provides some neat reflections on patterns for a mutable config that can be shared between threads. 
+
 Advantages:
 
+- Built into Rust
 - Allows efficient unsafe data management (e.g. `lazy_static`)
-- Works well with raw pointers + FFI
+- Works well with raw pointers + FFI. This is likely better than `const` because "References to the same constant are not necessarily guaranteed to refer to the same memory address..." ([TRPL 1st ed.](https://doc.rust-lang.org/1.29.2/book/first-edition/const-and-static.html))
 
 Disadvantages:
 
 - Access to mutable statics is unsafe because the compiler isn't checking that there's unique.
 - All data must be `Sync`
-
-TODO: show an example of raw pointers or FFI with static.
+- Destructors won't run
 
 # TODO:
 
-- `include*`
-- `const fn` (https://doc.rust-lang.org/nightly/unstable-book/language-features/const-fn.html)
-- `maplit`?
+- `let`
+- Domain-specific solutions
+- Show an example of raw pointers or FFI with static
+- Is it possible to use interior mutability with `const`?
+- What's a real-life use case of an immutable static item?
+- Show an example of multi-threaded mutable static item?
+- [`const fn`](https://doc.rust-lang.org/nightly/unstable-book/language-features/const-fn.html)?
+- [`maplit`](https://docs.rs/maplit)?
