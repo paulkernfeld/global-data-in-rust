@@ -1,4 +1,6 @@
-This is a guide to explain how you can use "global data" in Rust. When I say "global data," I mean data that is loaded near the start of the program and is accessible in almost all of the program.
+# A Guide to Global Data in Rust
+
+This guide explains how you can use "global data" in Rust. When I say "global data," I mean data that is loaded near the start of the program and is accessible in almost all of the program.
 
 Possible use cases for global data:
 
@@ -10,13 +12,13 @@ Possible use cases for global data:
 
 # Tradeoffs
 
-Here are some questions to think about when you're choosing a global data solution for your program:
+Below are questions to think about when you're choosing a global data solution for your program.
 
 ## Compile time or run time?
 
 Loading the data at compile time provides the opportunity to detect invalid data sooner. Also, it might improve the program's startup time.
 
-Loading the data at run time can be nice because changing the data won't trigger a recompile. In large Rust projects with lots of dependencies, long compilation times can be a pain point. Another advantage of loading at run-time is that the data can be loaded lazily, which could improve the program's startup time if there is lots of data but not all of it is needed immediately.
+Loading the data at run time can be nice because changing the data won't trigger a recompile. In complex Rust projects, long compilation times can be a pain point. Another advantage of loading at run-time is that the data can be loaded lazily, which could improve the program's startup time if there is lots of data but not all of it is needed immediately.
 
 It's also possible to implement a hybrid approach where the data is _validated_ at compile time but _loaded_ at run time. That combines the eager validation of compile-time loading with the not-needing-to-recompile of run-time loading.
 
@@ -34,7 +36,7 @@ Hot-reloading is an interesting kind of unidirectional immutability where the pr
 
 Data with the `'static` lifetime can make things easier because you can use it literally anywhere in your program. Statics are "are baked into the data segment of the final binary" ([TRPL 1st ed.](https://doc.rust-lang.org/1.29.2/book/first-edition/lifetimes.html)).
 
-Not all global data will need the `'static` lifetime. Maybe you only need your data available in _most_ of your program, not all of it. This can open up more options for loading your data.
+Not all global data will need the `'static` lifetime. Maybe you only need your data available in _most_ of your program, not all of it. This can open up more options for loading your data at run time.
 
 ## Is heap allocation supported?
 
@@ -122,9 +124,8 @@ The [`lazy_static`](https://docs.rs/lazy_static) crate uses a macro to automate 
 Advantages:
 
 - `'static` lifetime
-- Creating data at run-time
+- Data is loaded lazily at run time
 - Allows heap-allocated data
-- You can transform the data on creation with a run-time function (not a const fn)
 - Allows interior-mutable data
 - Can work w/o `std` using `spin_no_std`
 
@@ -278,11 +279,10 @@ Disadvantages:
 - The Embedded Rust Book [suggests using a singleton pattern](https://rust-embedded.github.io/book/peripherals/singletons.html) instead of a `static mut` to "treat your hardware like data" without requiring as much `unsafe`.
 - The Amethyst game engine has a [`Loader`](https://docs-src.amethyst.rs/stable/amethyst_assets/struct.Loader.html) struct that can be used to load data.
 
-# TODO:
+# TODO
 
-- Show an example of raw pointers or FFI with static
-- Is it possible to use interior mutability with `const`?
+- Show an example of raw pointers or FFI with static?
 - What's a real-life use case of an immutable static item?
 - Show an example of multi-threaded mutable static item?
-- [`const fn`](https://doc.rust-lang.org/nightly/unstable-book/language-features/const-fn.html)?
+- [`const fn`](https://doc.rust-lang.org/nightly/unstable-book/language-features/const-fn.html) (unstable)?
 - [`maplit`](https://docs.rs/maplit)?
