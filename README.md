@@ -44,6 +44,36 @@ Heap allocation is convenient because you don't need to know the size of your da
 
 Here I'll explain a bit about how each solution works and how to use them, as well as the advantages and disadvantages of each. I will try to order the solutions in order of increasing power, inspired by the [Principle of Least Power](https://www.lihaoyi.com/post/StrategicScalaStylePrincipleofLeastPower.html), although it won't be a strict ordering because there are qualitative differences.
 
+## The `let` keyword
+
+The [`let` keyword](https://doc.rust-lang.org/std/keyword.let.html), which you're probably already familiar with, is used to declare all variables in Rust. Although it might not be the most obvious choice for global data, it offers a number of advantages.
+
+```rust
+struct Config {
+    my_name: String
+}
+
+fn my_fn(config: Config) {
+    assert_eq!(config.my_name, "paul");
+}
+
+fn main() {
+    let config = Config { my_name: "paul" };
+    my_fn(config);
+}
+```
+
+Advantages:
+
+- Built into Rust
+- You often don't need to specify the type of the data. This can be useful for functions and complex types.
+- It's easier to provide dummy data for testing
+- Allows mutable data
+
+Disadvantages:
+
+- You need to pass the config through each function that you use, which may be bothersome
+
 ## The `const` keyword
 
 The [`const` keyword](https://doc.rust-lang.org/std/keyword.const.html) ([TRPL Chapter 3](https://doc.rust-lang.org/stable/book/ch03-01-variables-and-mutability.html#differences-between-variables-and-constants)) is Rust's built-in way to handle immutable constant data. An extremely simple approach.
@@ -59,13 +89,12 @@ fn main() {
 Advantages:
 
 - Built into Rust
-- `static` lifetime
+- `'static` lifetime
 - Data type is validated at compile time
 
 Disadvantages:
 
-- Doesn't allow mutable data
-- Doesn't allow heap-allocated data
+- The data that can be created is restricted to simple operations like creating a new struct, as well as some `std` functions that have the [`#[rustc_const_stable]`](https://rustc-dev-guide.rust-lang.org/stability.html#rustc_const_stable) annotation.
 
 ## `include_str` and `include_bytes`
 
@@ -84,11 +113,6 @@ Advantages:
 - Lifetime of data is `'static`
 - Checks for the presence of the file at compile time
 
-Disadvantages:
-
-- No mutability
-- No heap-allocated data
-
 ## The `lazy_static` crate
 
 The [`lazy_static`](https://docs.rs/lazy_static) crate uses a macro to automate exactly-once initialization of a static variable using [`std::sync::Once`](https://doc.rust-lang.org/std/sync/struct.Once.html). The [`once_cell`](https://docs.rs/once_cell) crate is also worth checking out; it's like `lazy_static` without macros.
@@ -96,10 +120,10 @@ The [`lazy_static`](https://docs.rs/lazy_static) crate uses a macro to automate 
 Advantages:
 
 - `'static` lifetime
-- Allows mutable data
 - Creating data at run-time
 - You can create data structures that requires heap allocation
 - You can transform the data on creation with a run-time function (not a const fn)
+- Allows interior-mutable data
 - Can work w/o `std` using `spin_no_std`
 
 Disadvantages:
@@ -148,7 +172,6 @@ Advantages:
 
 Disadvantages:
 
-- Maybe doesn't allow mutable data (?)
 - Kind of complex to get working
 
 There are two ways to use `phf`. Probably the most normal way is with a custom build script, which would let you generate the map from, e.g., an ingested data file. See `src/main.rs` for an example of this (I couldn't get it to work with `skeptic`).
@@ -238,7 +261,7 @@ Although it doesn't use mutable statics, Armin Ronacher's [You can't Rust that](
 Advantages:
 
 - Built into Rust
-- Allows efficient unsafe data management (e.g. `lazy_static`)
+- Allows efficient unsafe mutable data management (see `lazy_static`)
 - Works well with raw pointers + FFI. This is likely better than `const` because "References to the same constant are not necessarily guaranteed to refer to the same memory address..." ([TRPL 1st ed.](https://doc.rust-lang.org/1.29.2/book/first-edition/const-and-static.html))
 
 Disadvantages:
@@ -249,7 +272,6 @@ Disadvantages:
 
 # TODO:
 
-- `let`
 - Domain-specific solutions
 - Show an example of raw pointers or FFI with static
 - Is it possible to use interior mutability with `const`?
