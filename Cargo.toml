@@ -16,5 +16,6 @@ skeptic = "0.13"
 
 [dev-dependencies]
 lazy_static = "1.4"
+once_cell = "1.4"
 skeptic = "0.13"
 phf = { version = "0.8", features = ["macros"] }

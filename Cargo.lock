@@ -97,6 +97,7 @@ name = "global-data-in-rust"
 version = "0.1.0"
 dependencies = [
  "lazy_static",
+ "once_cell",
  "phf",
  "phf_codegen",
  "skeptic",
@@ -119,6 +120,12 @@ name = "libc"
 version = "0.2.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "99e85c08494b21a9054e7fe1374a732aeadaff3980b6990b94bfd3a70f690005"
+
+[[package]]
+name = "once_cell"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b631f7e854af39a1739f401cf34a8a013dfe09eac4fa4dba91e9768bd28168d"
 
 [[package]]
 name = "phf"

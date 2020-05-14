@@ -117,9 +117,9 @@ Advantages:
 - Lifetime of data is `'static`
 - Checks for the presence of the file at compile time
 
-## The `lazy_static` crate
+## The `lazy_static` and `once_cell` crates
 
-The [`lazy_static`](https://docs.rs/lazy_static) crate uses a macro to automate exactly-once initialization of a static variable using [`std::sync::Once`](https://doc.rust-lang.org/std/sync/struct.Once.html). The [`once_cell`](https://docs.rs/once_cell) crate is also worth checking out; it's like `lazy_static` without macros.
+The [`lazy_static`](https://docs.rs/lazy_static) and [`once_cell`](https://docs.rs/once_cell) crates both provide safe interfaces for exactly-once initialization of global static data. They are similar enough that I've grouped them together for now. `lazy_static` is more focused on convenient features for end users, whereas `once_cell` provides more low-level flexibility and avoids macros.
 
 Advantages:
 
@@ -134,7 +134,7 @@ Disadvantages:
 - The data type needs to fulfill the `Sync` trait. So, if you want have mutable data, you probably need to use like a `Mutex` or `RwLock`. Beware deadlocks and confusing code?
 - If the type has a destructor, then it will not run when the process exits. So you probably wouldn't want to do this with anything that has complicated resources that need to be cleaned up. Maybe temporary files, lock files or PID files?
 
-The following example is stolen from the [`lazy_static` docs](https://docs.rs/lazy_static/1.4.0/lazy_static/). It shows creating a heap-allocating data structure and using a function to transform the data:
+Here's `lazy_static`:
 
 ```rust
 #[macro_use]
@@ -143,23 +143,32 @@ extern crate lazy_static;
 use std::collections::HashMap;
 
 lazy_static! {
-    static ref HASHMAP: HashMap<u32, &'static str> = {
+    static ref GLOBAL_MAP: HashMap<&'static str, &'static str> = {
         let mut m = HashMap::new();
-        m.insert(0, "foo");
-        m.insert(1, "bar");
-        m.insert(2, "baz");
+        m.insert("key", "value");
         m
     };
-    static ref COUNT: usize = HASHMAP.len();
-    static ref NUMBER: u32 = times_two(21);
 }
 
-fn times_two(n: u32) -> u32 { n * 2 }
+fn main() {
+    assert_eq!(GLOBAL_MAP.get(&"key"), Some(&"value"));
+}
+```
+
+...and here's `once_cell`:
+
+```rust
+use std::{sync::Mutex, collections::HashMap};
+use once_cell::sync::Lazy;
+
+static GLOBAL_MAP: Lazy<Mutex<HashMap<&'static str, &'static str>>> = Lazy::new(|| {
+    let mut m = HashMap::new();
+    m.insert("key", "value");
+    Mutex::new(m)
+});
 
 fn main() {
-    println!("The map has {} entries.", *COUNT);
-    println!("The entry for `0` is \"{}\".", HASHMAP.get(&0).unwrap());
-    println!("A expensive calculation on a static results in: {}.", *NUMBER);
+    assert_eq!(GLOBAL_MAP.lock().unwrap().get("key"), Some(&"value"));
 }
 ```
 
