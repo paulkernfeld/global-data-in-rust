@@ -217,6 +217,31 @@ fn main() {
 }
 ```
 
+## The `arc-swap` crate
+
+When choosing a solution for hot-reloadable global configuration, it's challenging to allow writes without blocking reads. The [`arc-swap` crate](https://docs.rs/arc-swap) provides a thoughtful solution to this problem by taking advantage of atomics. The crate is optimized for managing data that is read frequently but written only occasionally.
+
+Here's an example of how `arc-swap` could be used with `lazy_static` to implement reloadable global configuration. Although the example is not concurrent, the crate will be most helpful in concurrent programming.
+
+```rust
+#[macro_use]
+extern crate lazy_static;
+use arc_swap::{ArcSwap};
+use std::sync::Arc;
+
+lazy_static! {
+    static ref GLOBAL_CONFIG: ArcSwap<&'static str> = {
+        ArcSwap::from(Arc::new("hello"))
+    };
+}
+
+fn main() {
+    assert_eq!(**GLOBAL_CONFIG.load(), "hello");
+    GLOBAL_CONFIG.swap(Arc::new("world"));
+    assert_eq!(**GLOBAL_CONFIG.load(), "world");
+}
+```
+
 ## `std::include!`
 
 The [`std::include` macro](https://doc.rust-lang.org/std/macro.include.html) is kind of like copy-pasting a snippet of Rust into your code. It can be used to generate complex Rust code at compile time (as in `phf`).
