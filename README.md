@@ -100,9 +100,11 @@ Disadvantages:
 
 - The data that can be created is restricted to simple operations like creating a new struct, as well as some `std` functions that have the [`#[rustc_const_stable]`](https://rustc-dev-guide.rust-lang.org/stability.html#rustc_const_stable) annotation.
 
-## `include_str` and `include_bytes`
+## `std::include_str!` and `std::include_bytes!`
 
-`include_str` and `include_bytes` include a file as `&'static str` and `&'static [u8]`, respectively.
+The [`std::include_str!`](https://doc.rust-lang.org/std/macro.include_str.html) and [`std::include_bytes!`](https://doc.rust-lang.org/std/macro.include_bytes.html) macros include a file as `&'static str` and `&'static [u8]`, respectively.
+
+See `src/lib.rs` for the code that uses these macros.
 
 ```rust
 fn main() {
@@ -172,7 +174,7 @@ fn main() {
 }
 ```
 
-## `phf` crate
+## The `phf` crate
 
 The [phf](https://github.com/sfackler/rust-phf) crate lets you generate maps at compile time.
 
@@ -215,15 +217,9 @@ fn main() {
 }
 ```
 
-## `include`
+## `std::include!`
 
-`include` is kind of like copy-pasting a snippet of Rust into your code. It can be used to generate complex Rust code at compile time (as in `phf`).
-
-```rust
-fn main() {
-    assert_eq!(6, global_data_in_rust::ALSO_SIX);
-}
-```
+The [`std::include` macro](https://doc.rust-lang.org/std/macro.include.html) is kind of like copy-pasting a snippet of Rust into your code. It can be used to generate complex Rust code at compile time (as in `phf`).
 
 Advantages:
 
@@ -236,6 +232,14 @@ Advantages:
 Disadvantages
 
 - Unhygienic (in the macro sense)
+
+See `src/lib.rs` for the example `include` code.
+
+```rust
+fn main() {
+    assert_eq!(6, global_data_in_rust::ALSO_SIX);
+}
+```
 
 ## Mutable static items
 
