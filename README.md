@@ -268,49 +268,7 @@ fn main() {
 
 ## Mutable static items
 
-A static item is similar to a constant, except that it allows mutability as well as better use with raw pointers. Mutating a static is always `unsafe` because Rust's type system isn't there to enforce unique access. Static items do not call `drop` at the end of the program, so it won't clean up resources that it allocates. 
-
-```rust
-static mut FLAG: bool = false;
-
-fn main() {
-    unsafe { FLAG = true };
-    assert!(unsafe { FLAG });
-}
-```
-
-An example of a structure that requires heap allocation. I'm using a `Cell` and an `Option` so that I can create a spot in memory for the data at compile time, then I fill in the data at run-time.
-
-```rust
-use std::collections::HashMap;
-use std::cell::Cell;
-static mut MY_STATIC_MAP: Cell<Option<HashMap::<i8, i8>>> = Cell::new(None);
-
-fn main() {
-    // Modify the contents of the cell
-    unsafe { MY_STATIC_MAP.set(Some(HashMap::new())) };
-
-    // Manipulate a mutable reference to the contents of the cell
-    unsafe { MY_STATIC_MAP.get_mut().as_mut().unwrap().insert(-3, 7) };
-
-    // Get an immutable reference to the contents of the cell
-    assert_eq!(Some(&7), unsafe { MY_STATIC_MAP.get_mut().as_ref().unwrap().get(&-3) });
-}
-```
-
-Although it doesn't use mutable statics, Armin Ronacher's [You can't Rust that](https://lucumr.pocoo.org/2018/3/31/you-cant-rust-that/) provides some neat reflections on patterns for a mutable config that can be shared between threads. 
-
-Advantages:
-
-- Built into Rust
-- Allows efficient unsafe mutable data management (e.g. `lazy_static`)
-- Works well with raw pointers + FFI. This is likely better than `const` because "References to the same constant are not necessarily guaranteed to refer to the same memory address..." ([TRPL 1st ed.](https://doc.rust-lang.org/1.29.2/book/first-edition/const-and-static.html))
-
-Disadvantages:
-
-- All access to mutable statics is unsafe. Be careful not to violate any invariants!
-- All data must be `Sync`
-- Destructors won't run
+Items declared as [`static mut`](https://doc.rust-lang.org/reference/items/static-items.html#mutable-statics) are extremely powerful; all access to them is `unsafe` and they provide no guard rails whatsoever. In fact, they are so "powerful" that they are being [considered for deprecation](https://github.com/rust-lang/rust/issues/53639) as of May 2020. They are likely not the solution you're looking for; you can almost always replace them with an immutable static using some kind of synchronization primitive. If you think there's no other way to solve your problem, you're basically talking about building your own synchronization primitive, so be sure to read the [Rustonomicon](https://doc.rust-lang.org/nomicon/) and thoroughly understand the implications of unsafe behavior beforehand!
 
 ## Domain-specific solutions
 
