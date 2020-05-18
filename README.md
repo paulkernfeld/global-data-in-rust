@@ -174,6 +174,33 @@ fn main() {
 }
 ```
 
+## Immutable static items
+
+If you want flexible mutable global data, one way to accomplish it is to put a synchronization primitive into an [immutable static item](https://doc.rust-lang.org/reference/items/static-items.html). There are two broad ways to do this. One is by lazily initializing the synchronization primitive at run time using something like `lazy_static` and `once_cell`. The other way to do it is to use a synchronization primitive that can be initialized statically, such as those provided by the [`parking_lot` crate](https://docs.rs/parking_lot).
+
+Advantages:
+
+- `'static` lifetime
+- Choose your own synchronization primitive
+- Choose between compile time and run time initialization
+- Enables interior mutability
+
+Disadvantages:
+
+- More choices to make
+- `Drop` doesn't run on static items
+
+The example below isn't parallel, but the `parking_lot` mutex can be used in parallel.
+
+```rust
+static MY_DATA: parking_lot::Mutex<&str> = parking_lot::const_mutex("hello");
+
+pub fn main() {
+    *MY_DATA.lock() = "world";
+    assert_eq!(*MY_DATA.lock(), "world");
+}
+```
+
 ## The `phf` crate
 
 The [phf](https://github.com/sfackler/rust-phf) crate lets you generate maps at compile time.
